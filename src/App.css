@@ -24,11 +24,13 @@ body {
   justify-content: center;
   width: 100%;
   
+  
 }
 
 .gallery-image img {
   height: 100%;
   width: 350px;
+  
   transform: scale(1.0);
   transition: transform 0.4s ease;
 }
@@ -209,4 +211,22 @@ section {
 
 .button:hover{
   background-color: rgb(66, 184, 131);
+}
+
+
+.Mainclass{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.title{
+  color: white;
+  font-size: 3rem;
+}
+
+
+.download-icon{
+  width: 10%;
 }

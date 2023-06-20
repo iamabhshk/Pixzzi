@@ -1,113 +1,51 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
-import Loader from './Components/Loader/Loader';
 
 const App = () => {
-  const [photos, setPhotos] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [randomPhotos, setRandomPhotos] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [sortOption, setSortOption] = useState('latest');
-
+  const [currentPage, setCurrentPage] = useState(1);
   const accessKey = 'u_5TcQ-sgzErfRNpNOn2HtQeMy3p01ZPUi8Nufi59Uk';
 
-  const observer = useRef(null);
-  const lastPhotoElementRef = useRef(null);
+  useEffect(() => {
+    loadMorePhotos(); // Initial load
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll); // Cleanup
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    if (searchResults.length > 0) {
-      setPhotos(searchResults);
-    } else {
-      setPhotos([]);
-      setPage(1);
-      loadPhotos();
-    }
-  }, [searchResults]);
+    // Reset currentPage to 1 whenever searchKeyword or sortOption changes
+    setCurrentPage(1);
+  }, [searchKeyword, sortOption]);
 
-  useEffect(() => {
-    let paragraphs = document.querySelectorAll("img");
-    const callback = (entries, observer) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) {
-          return;
-        }
-        entry.target.classList.add("fade-in");
-        observer.unobserve(entry.target);
-      });
-    };
-    const optionsss = {
-      threshold: 0.7
-    };
-  const observers = new IntersectionObserver(callback, optionsss);
-  paragraphs.forEach((parag) => observers.observe(parag));
-    
-
-
-
-    if (!loading && observer.current) {
-      observer.current.disconnect();
-    }
-
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.5,
-    };
-
-    const handleIntersection = (entries) => {
-      const entry = entries[0];
-      if (entry.isIntersecting) {
-        loadMorePhotos();
-      }
-    };
-
-    observer.current = new IntersectionObserver(handleIntersection, options);
-
-    if (lastPhotoElementRef.current) {
-      observer.current.observe(lastPhotoElementRef.current);
-    }
-
-    return () => {
-      if (observer.current) {
-        observer.current.disconnect();
-      }
-    };
-  }, [loading]);
-
-  const loadPhotos = () => {
-    setLoading(true);
-
+  const loadMorePhotos = () => {
     axios
-      .get(`https://api.unsplash.com/photos/`, {
+      .get('https://api.unsplash.com/photos/random', {
         headers: {
           Authorization: `Client-ID ${accessKey}`,
         },
         params: {
-          page,
-          per_page: 30,
+          count: 5,
+          page: currentPage,
         },
       })
       .then((response) => {
-        const newPhotos = response.data.map((photo) => ({
-          id: photo.id,
-          url: photo.urls.regular,
-        }));
-
-        setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
-        setPage((prevPage) => prevPage + 1);
-        setLoading(false);
+        const newPhotos = response.data;
+        setRandomPhotos((prevPhotos) => [...newPhotos, ...prevPhotos]);
+        setCurrentPage((prevPage) => prevPage + 1);
       })
-      .catch((error) => {
-        console.log('Error loading photos:', error);
-        setLoading(false);
-      });
+      .catch((error) => console.log(error));
   };
 
-  const loadMorePhotos = () => {
-    if (!loading) {
-      loadPhotos();
+  const handleScroll = () => {
+    const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+    if (scrollTop + clientHeight >= scrollHeight - 10) {
+      loadMorePhotos();
     }
   };
 
@@ -117,29 +55,18 @@ const App = () => {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    setSearchResults([]);
 
     axios
-      .get(`https://api.unsplash.com/search/photos/`, {
+      .get('https://api.unsplash.com/search/photos', {
         headers: {
           Authorization: `Client-ID ${accessKey}`,
         },
         params: {
           query: searchKeyword,
-          per_page: 30,
         },
       })
-      .then((response) => {
-        setSearchResults(
-          response.data.results.map((photo) => ({
-            id: photo.id,
-            url: photo.urls.regular,
-          }))
-        );
-      })
-      .catch((error) => {
-        console.log('Error searching photos:', error);
-      });
+      .then((response) => setSearchResults(response.data.results))
+      .catch((error) => console.log(error));
 
     setSearchKeyword('');
   };
@@ -148,12 +75,8 @@ const App = () => {
     setSortOption(event.target.value);
   };
 
-  
-
-
-
   const sortPhotos = (photos) => {
-    const sortedPhotos = [...photos];
+    const sortedPhotos = photos ? [...photos] : [];
     switch (sortOption) {
       case 'popular':
         return sortedPhotos.sort((a, b) => b.likes - a.likes);
@@ -167,7 +90,8 @@ const App = () => {
 
 
   return (
-    <div>
+    <div className="Mainclass">
+      <h1 className="title">Pixzzi</h1>
       <div className="search-container">
         <form onSubmit={handleSearchSubmit} className="search-bar">
           <input
@@ -175,16 +99,13 @@ const App = () => {
             placeholder="Search wallpapers..."
             value={searchKeyword}
             onChange={handleSearchChange}
-            pattern=".*\S.*"
-            required
           />
         </form>
-
-        <div className="dropdown">
-          <button className="dropdown-button" htmlFor="sort">
+        <div className="section">
+          <button htmlFor="sort" className="button">
             Sort by:
           </button>
-          <select id="sort" value={sortOption} onChange={handleSortChange} className="dropdown-content">
+          <select id="sort" value={sortOption} onChange={handleSortChange} className="selectColor">
             <option value="popular" className="dropdown-item">
               Popular
             </option>
@@ -199,28 +120,33 @@ const App = () => {
       </div>
 
       <div className="gallery-image">
-        {sortPhotos(photos).map((photo, index) => {
-          if (photos.length === index + 1) {
-            return (
-              <div ref={lastPhotoElementRef} key={photo.id} className="img-box">
-                <img src={photo.url} alt="Unsplash" />
-              </div>
-            );
-          } else {
-            return (
-              <div key={photo.id} className="img-box">
-                <img src={photo.url} alt="Unsplash" />
-                <div className=".transparent-box">
-                    <span className="username">{photo.user.username}</span>
-                    <span className="likes">{photo.likes} likes</span>
+        {searchResults && searchResults.length > 0 ? (
+          sortPhotos(searchResults).map((photo) => (
+            <div key={photo.id} className="img-box">
+              <img src={photo.urls.small} alt={photo.alt_description} className="photo" />
+              <div className="transparent-box">
+                <div className="caption">
+                  <p>{photo.user.username}</p>
+                  <p className="opacity-low">Likes: {photo.likes}</p>
+                  {/* <button onClick={() => handleDownload(photo.urls.small)}>Download</button> */}
                 </div>
               </div>
-            );
-          }
-        })}
+            </div>
+          ))
+        ) : (
+          sortPhotos(randomPhotos).map((photo) => (
+            <div key={photo.id} className="img-box">
+              <img src={photo.urls.small} alt={photo.alt_description} className="photo" />
+              <div className="transparent-box">
+                <div className="caption">
+                  <p>{photo.user.username}</p>
+                  <p className="opacity-low">Likes: {photo.likes}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
-
-      {loading && <Loader/>}
     </div>
   );
 };
