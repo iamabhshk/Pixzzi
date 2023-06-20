@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './App.css';
+import SearchBar from './SearchBar/SearchBar';
+import Gallery from './Gallery/Gallery';
 
-const App = () => {
+const Pixzzi = () => {
   const [randomPhotos, setRandomPhotos] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -42,12 +43,10 @@ const App = () => {
       .catch((error) => console.log(error));
   };
 
-  const handleScroll = () => {
-    const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 10) {
-      loadMorePhotos();
-    }
-  };
+  const handleSortChange = (event) => {
+    setSortOption(event.target.value);
+};  
+
 
   const handleSearchChange = (event) => {
     setSearchKeyword(event.target.value);
@@ -63,17 +62,16 @@ const App = () => {
         },
         params: {
           query: searchKeyword,
+          
         },
       })
-      .then((response) => setSearchResults(response.data.results))
+      .then((response) => {
+        setSearchResults(response.data.results);
+      })
       .catch((error) => console.log(error));
 
     setSearchKeyword('');
-  };
-
-  const handleSortChange = (event) => {
-    setSortOption(event.target.value);
-  };
+  }; 
 
   const sortPhotos = (photos) => {
     const sortedPhotos = photos ? [...photos] : [];
@@ -88,67 +86,33 @@ const App = () => {
     }
   };
 
+  const handleScroll = () => {
+    const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+    if (scrollTop + clientHeight >= scrollHeight - 10) {
+      loadMorePhotos();
+    }
+  };
 
   return (
     <div className="Mainclass">
       <h1 className="title">Pixzzi</h1>
-      <div className="search-container">
-        <form onSubmit={handleSearchSubmit} className="search-bar">
-          <input
-            type="text"
-            placeholder="Search wallpapers..."
-            value={searchKeyword}
-            onChange={handleSearchChange}
-          />
-        </form>
-        <div className="section">
-          <button htmlFor="sort" className="button">
-            Sort by:
-          </button>
-          <select id="sort" value={sortOption} onChange={handleSortChange} className="selectColor">
-            <option value="popular" className="dropdown-item">
-              Popular
-            </option>
-            <option value="latest" className="dropdown-item">
-              Latest
-            </option>
-            <option value="oldest" className="dropdown-item">
-              Oldest
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div className="gallery-image">
-        {searchResults && searchResults.length > 0 ? (
-          sortPhotos(searchResults).map((photo) => (
-            <div key={photo.id} className="img-box">
-              <img src={photo.urls.small} alt={photo.alt_description} className="photo" />
-              <div className="transparent-box">
-                <div className="caption">
-                  <p>{photo.user.username}</p>
-                  <p className="opacity-low">Likes: {photo.likes}</p>
-                  {/* <button onClick={() => handleDownload(photo.urls.small)}>Download</button> */}
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          sortPhotos(randomPhotos).map((photo) => (
-            <div key={photo.id} className="img-box">
-              <img src={photo.urls.small} alt={photo.alt_description} className="photo" />
-              <div className="transparent-box">
-                <div className="caption">
-                  <p>{photo.user.username}</p>
-                  <p className="opacity-low">Likes: {photo.likes}</p>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <SearchBar 
+        setSearchResults={setSearchResults}
+        searchResults={searchResults}
+        searchKeyword={searchKeyword}
+        sortOption={sortOption}
+        handleSearchSubmit={handleSearchSubmit}
+        handleSearchChange={handleSearchChange}
+        handleSortChange={handleSortChange}
+      />
+      <Gallery 
+        randomPhotos={randomPhotos}
+        searchResults={searchResults}
+        sortPhotos={sortPhotos}
+      />
+      
     </div>
   );
 };
 
-export default App;
+export default Pixzzi;

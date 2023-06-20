@@ -1,0 +1,117 @@
+import React, { useState, useEffect, Fragment } from 'react';
+import axios from 'axios';
+import Pixzzi from "../Pixzzi/Pixzzi";
+
+const Controller = () => {
+    const [randomPhotos, setRandomPhotos] = useState([]);
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [sortOption, setSortOption] = useState('latest');
+    const [currentPage, setCurrentPage] = useState(1);
+    const accessKey = 'u_5TcQ-sgzErfRNpNOn2HtQeMy3p01ZPUi8Nufi59Uk';
+
+    useEffect(() => {
+        loadMorePhotos(); // Initial load
+        console.log("HEllo")
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll); // Cleanup
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        // Reset currentPage to 1 whenever searchKeyword or sortOption changes
+        setCurrentPage(1);
+    }, [searchKeyword, sortOption]);
+
+    const loadMorePhotos = () => {
+        axios
+        .get('https://api.unsplash.com/photos/random', {
+            headers: {
+            Authorization: `Client-ID ${accessKey}`,
+            },
+            params: {
+            count: 5,
+            page: currentPage,
+            },
+        })
+        .then((response) => {
+            const newPhotos = response.data;
+            setRandomPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
+            setCurrentPage((prevPage) => prevPage + 1);
+        })
+        .catch((error) => console.log(error));
+    };
+
+    const handleSortChange = (event) => {
+        setSortOption(event.target.value);
+    };  
+
+
+    const handleSearchChange = (event) => {
+        setSearchKeyword(event.target.value);
+    };
+
+    const handleSearchSubmit = (event) => {
+        event.preventDefault();
+
+        axios
+        .get('https://api.unsplash.com/search/photos', {
+            headers: {
+            Authorization: `Client-ID ${accessKey}`,
+            },
+            params: {
+            query: searchKeyword,
+            
+            },
+        })
+        .then((response) => {
+            setSearchResults(response.data.results);
+        })
+        .catch((error) => console.log(error));
+
+        setSearchKeyword('');
+    }; 
+
+    const sortPhotos = (photos) => {
+        const sortedPhotos = photos ? [...photos] : [];
+        switch (sortOption) {
+        case 'popular':
+            return sortedPhotos.sort((a, b) => b.likes - a.likes);
+        case 'oldest':
+            return sortedPhotos.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        case 'latest':
+        default:
+            return sortedPhotos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+    };
+
+    const handleScroll = () => {
+        const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 10) {
+        loadMorePhotos();
+        }
+    };
+
+    return (
+        <Fragment>
+            <Pixzzi 
+            setSearchResults={setSearchResults}
+            randomPhotos={randomPhotos}
+            searchResults={searchResults}
+            searchKeyword={searchKeyword}
+            sortOption={sortOption}
+            handleSearchSubmit={handleSearchSubmit}
+            handleSearchChange={handleSearchChange}
+            handleSortChange={handleSortChange}
+            sortPhotos={sortPhotos}    
+        />
+        </Fragment>
+        
+    )
+}
+
+export default Controller
+
+
+        

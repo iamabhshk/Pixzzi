@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import SearchBar from './SearchBar/SearchBar';
 import Gallery from './Gallery/Gallery';
+import Header from './Header/Header';
+
 
 const Pixzzi = () => {
   const [randomPhotos, setRandomPhotos] = useState([]);
@@ -37,7 +39,7 @@ const Pixzzi = () => {
       })
       .then((response) => {
         const newPhotos = response.data;
-        setRandomPhotos((prevPhotos) => [...newPhotos, ...prevPhotos]);
+        setRandomPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
         setCurrentPage((prevPage) => prevPage + 1);
       })
       .catch((error) => console.log(error));
@@ -62,12 +64,11 @@ const Pixzzi = () => {
         },
         params: {
           query: searchKeyword,
+          
         },
       })
       .then((response) => {
-        const newPhotos = response.data.results || response.data;
-        setSearchResults((prevPhotos) => [...prevPhotos, ...newPhotos]);
-        setCurrentPage((prevPage) => prevPage + 1);
+        setSearchResults(response.data.results);
       })
       .catch((error) => console.log(error));
 
@@ -96,7 +97,8 @@ const Pixzzi = () => {
 
   return (
     <div className="Mainclass">
-      <h1 className="title">Pixzzi</h1>
+     
+      <Header/>
       <SearchBar 
         setSearchResults={setSearchResults}
         searchResults={searchResults}
